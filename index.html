@@ -555,20 +555,21 @@ function buildSteps(w, sid, easy) {
   [['A', S.A], ['B', S.B]].forEach(([blk, pair]) => {
     const e1 = EX[pair[0]], e2 = EX[pair[1]];
     const n1 = trim(e1.kind === 'M' ? wi.main : wi.acc), n2 = trim(e2.kind === 'M' ? wi.main : wi.acc);
-    const restFull = (e1.kind === 'M' || e2.kind === 'M') ? wi.restM : wi.restA;
-    const mx = Math.max(n1, n2);
-    for (let i = 0; i < mx; i++) {
-      if (i < n1) steps.push({ cat: 'set', ex: e1.id, n: i + 1, of: n1, label: blk + '1', block: 'Block ' + blk, rng: rangeFor(e1, wi), rir: wi.rir, rest: 30, restKind: 'switch' });
-      if (i < n2) steps.push({ cat: 'set', ex: e2.id, n: i + 1, of: n2, label: blk + '2', block: 'Block ' + blk, rng: rangeFor(e2, wi), rir: wi.rir, rest: restFull, restKind: 'rest' });
-    }
+    [[e1, n1, blk + '1'], [e2, n2, blk + '2']].forEach(([e, n, lab]) => {
+      const rest = e.kind === 'M' ? wi.restM : wi.restA;
+      for (let i = 0; i < n; i++) steps.push({ cat: 'set', ex: e.id, n: i + 1, of: n, label: lab, block: 'Block ' + blk, rng: rangeFor(e, wi), rir: wi.rir, rest: i === n - 1 ? 45 : rest, restKind: i === n - 1 ? 'switch' : 'rest' });
+    });
     steps[steps.length - 1].rest = 45;
   });
   const rounds = easy ? Math.max(1, wi.rounds - 1) : wi.rounds;
-  for (let r = 0; r < rounds; r++) S.C.forEach((k, i) => {
-    const e = EX[k], last = (r === rounds - 1 && i === S.C.length - 1);
-    const st = { cat: e.kind === 'T' ? 'tset' : 'set', ex: k, n: r + 1, of: rounds, label: 'C' + (i + 1), block: 'Circuit C', rng: rangeFor(e, wi), rir: '2 to 3', rest: last ? 0 : (i === S.C.length - 1 ? 45 : 15), restKind: 'switch' };
-    if (e.kind === 'T') { st.secs = wi.tsec; st.rng = [wi.tsec, wi.tsec]; }
-    steps.push(st);
+  S.C.forEach((k, i) => {
+    const e = EX[k];
+    for (let r = 0; r < rounds; r++) {
+      const last = (i === S.C.length - 1 && r === rounds - 1);
+      const st = { cat: e.kind === 'T' ? 'tset' : 'set', ex: k, n: r + 1, of: rounds, label: 'C' + (i + 1), block: 'Circuit C', rng: rangeFor(e, wi), rir: '2 to 3', rest: last ? 0 : (r === rounds - 1 ? 30 : 40), restKind: r === rounds - 1 ? 'switch' : 'rest' };
+      if (e.kind === 'T') { st.secs = wi.tsec; st.rng = [wi.tsec, wi.tsec]; }
+      steps.push(st);
+    }
   });
   steps.push({ cat: 'z2', ex: 'zone2', secs: Math.round(wi.z2 * (easy ? 0.75 : 1) / 5) * 5 * 60 || wi.z2 * 60, block: 'Zone 2 finisher', label: 'Zone 2', rest: 0 });
   return steps;
@@ -779,7 +780,7 @@ function paintGuide() {
   h += sec('How the 12 weeks work', '<ul><li><b>Foundation (weeks 1–4):</b> 10–12 reps on main lifts, 3 reps in reserve, learn the movements. Week 4 is a lighter week.</li>' +
     '<li><b>Build (weeks 5–8):</b> 8–10 reps, 2 in reserve, one extra set in week 7. Week 8 is a lighter week.</li>' +
     '<li><b>Push (weeks 9–12):</b> 6–8 reps on main lifts, 1 to 2 in reserve. Week 12 is your retest.</li></ul>' +
-    '<p><b>Each session:</b> warm-up, paired exercises A1/A2 and B1/B2 (switch after 30 s, rest after the second), a short circuit C, then a Zone 2 finisher.</p>' +
+    '<p><b>Each session:</b> warm-up, four exercises A1, A2, B1, B2 (all sets of one exercise back to back, then move on), a short circuit C done the same way, then a Zone 2 finisher.</p>' +
     '<p><b>Retest (week 12):</b> weight, waist and body fat on the same scale and time as week 1. Test goblet squat, chest press and row with your week-1 weight for max clean reps, plank hold, and a Zone 2 walk at the same incline to compare heart rate.</p>');
   h += sec('Double progression', '<ul><li>Pick a weight you can lift for the bottom of the rep range with the reps in reserve shown.</li>' +
     '<li>Each session, add reps. When you hit the top of the range on <b>every</b> set, the app shows <b>Add X kg</b> for next time and you start back at the bottom.</li>' +
